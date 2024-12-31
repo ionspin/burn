@@ -603,6 +603,13 @@ impl RelativeOps for BoolOperationDescription {
                     out: desc.out.to_relative(converter),
                 })
             }
+            BoolOperationDescription::And(desc) => {
+                BoolOperationDescription::And(BinaryOperationDescription {
+                    lhs: desc.lhs.to_relative(converter),
+                    rhs: desc.rhs.to_relative(converter),
+                    out: desc.out.to_relative(converter),
+                })
+            }
         }
     }
 }

@@ -53,6 +53,10 @@ where
         kernel::slice_assign::<R, BT>(tensor, ranges, value)
     }
 
+    fn bool_and(lhs: BoolTensor<Self>, rhs: BoolTensor<Self>) -> BoolTensor<Self> {
+        kernel::and::<R, BT, BT>(lhs, rhs)
+    }
+
     fn bool_equal(lhs: BoolTensor<Self>, rhs: BoolTensor<Self>) -> BoolTensor<Self> {
         kernel::equal::<R, BT, BT>(lhs, rhs)
     }

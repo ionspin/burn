@@ -19,6 +19,7 @@ pub(crate) struct MulOp;
 pub(crate) struct DivOp;
 pub(crate) struct RemainderOp;
 pub(crate) struct PowOp;
+pub(crate) struct AndOp; TODO() // Cubecl support for AND?
 
 #[cube]
 impl<N: Numeric> BinaryOp<N> for AddOp {
@@ -59,6 +60,13 @@ impl<N: Numeric> BinaryOp<N> for RemainderOp {
 impl<N: Float> BinaryOp<N> for PowOp {
     fn execute(lhs: Line<N>, rhs: Line<N>) -> Line<N> {
         Line::powf(lhs, rhs)
+    }
+}
+
+#[cube]
+impl<N: Numeric> BinaryOp<N> for AndOp {
+    fn execute(lhs: Line<N>, rhs: Line<N>) -> Line<N> {
+        lhs && rhs
     }
 }
 

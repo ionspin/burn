@@ -62,6 +62,10 @@ impl<F: FloatCandleElement, I: IntCandleElement> BoolTensorOps<Self> for Candle<
         super::base::cat(tensors, dim)
     }
 
+    fn bool_and(lhs: BoolTensor<Self>, rhs: BoolTensor<Self>) -> BoolTensor<Self> {
+        todo!("Candle doesnt support and operation")
+    }
+
     fn bool_equal(lhs: BoolTensor<Self>, rhs: BoolTensor<Self>) -> BoolTensor<Self> {
         CandleTensor::new(lhs.tensor.eq(&rhs.tensor).unwrap())
     }

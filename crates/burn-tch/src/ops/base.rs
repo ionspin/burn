@@ -118,6 +118,16 @@ impl TchOps {
         TchTensor::new(tensor)
     }
 
+    pub fn and(lhs: TchTensor, rhs: TchTensor) -> TchTensor {
+        TchTensor::binary_ops_tensor(
+            lhs,
+            rhs,
+            |lhs, rhs| lhs.eq_tensor_(rhs).to_kind(tch::Kind::Bool),
+            |lhs, rhs| rhs.eq_tensor_(lhs).to_kind(tch::Kind::Bool),
+            |lhs, rhs| lhs.logical_and(rhs),
+        )
+    }
+
     pub fn equal(lhs: TchTensor, rhs: TchTensor) -> TchTensor {
         TchTensor::binary_ops_tensor(
             lhs,

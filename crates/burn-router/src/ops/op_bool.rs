@@ -142,6 +142,23 @@ impl<R: RunnerChannel> BoolTensorOps<Self> for BackendRouter<R> {
         out
     }
 
+    fn bool_and(lhs: BoolTensor<Self>, rhs: BoolTensor<Self>) -> BoolTensor<Self> {
+        let client = lhs.client.clone();
+        let out = client.register_empty_tensor(lhs.shape.clone(), DType::Bool);
+
+        let desc = BinaryOperationDescription {
+            lhs: lhs.into_description(),
+            rhs: rhs.into_description(),
+            out: out.to_description_out(),
+        };
+
+        client.register(OperationDescription::Bool(
+            BoolOperationDescription::And(desc),
+        ));
+
+        out
+    }
+
     fn bool_equal(lhs: BoolTensor<Self>, rhs: BoolTensor<Self>) -> BoolTensor<Self> {
         let client = lhs.client.clone();
         let out = client.register_empty_tensor(lhs.shape.clone(), DType::Bool);

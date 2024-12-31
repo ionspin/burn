@@ -307,6 +307,42 @@ impl<B: FusionBackend> BoolTensorOps<Self> for Fusion<B> {
         out
     }
 
+    fn bool_and(lhs: BoolTensor<Self>, rhs: BoolTensor<Self>) -> BoolTensor<Self> {
+        #[derive(new)]
+        struct EqualOps<B: FusionBackend> {
+            desc: BinaryOperationDescription,
+            _b: PhantomData<B>,
+        }
+
+        impl<B: FusionBackend> Operation<B::FusionRuntime> for EqualOps<B> {
+            fn execute(self: Box<Self>, handles: &mut HandleContainer<B::Handle>) {
+                let lhs = handles.get_bool_tensor::<B>(&self.desc.lhs);
+                let rhs = handles.get_bool_tensor::<B>(&self.desc.rhs);
+                let output = B::bool_and(lhs, rhs);
+                handles.register_bool_tensor::<B>(&self.desc.out.id, output);
+            }
+        }
+
+        let stream_1 = lhs.stream;
+        let stream_2 = rhs.stream;
+        let out = lhs
+            .client
+            .tensor_uninitialized(binary_ops_shape(&lhs.shape, &rhs.shape), DType::Bool);
+
+        let desc = BinaryOperationDescription {
+            lhs: lhs.into_description(),
+            rhs: rhs.into_description(),
+            out: out.to_description_out(),
+        };
+        out.client.register(
+            vec![stream_1, stream_2],
+            OperationDescription::Bool(BoolOperationDescription::And(desc.clone())),
+            EqualOps::<B>::new(desc),
+        );
+
+        out
+    }
+
     fn bool_equal(lhs: BoolTensor<Self>, rhs: BoolTensor<Self>) -> BoolTensor<Self> {
         #[derive(new)]
         struct EqualOps<B: FusionBackend> {

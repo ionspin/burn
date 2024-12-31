@@ -71,6 +71,14 @@ impl<E: FloatNdArrayElement, I: IntNdArrayElement, Q: QuantElement> BoolTensorOp
         NdArrayOps::cat(tensors, dim)
     }
 
+    fn bool_and(lhs: NdArrayTensor<bool>, rhs: NdArrayTensor<bool>) -> NdArrayTensor<bool> {
+        let output = Zip::from(&lhs.array)
+            .and(&rhs.array)
+            .map_collect(|&lhs_val, &rhs_val| (lhs_val && rhs_val))
+            .into_shared();
+        NdArrayTensor::new(output)
+    }
+
     fn bool_equal(lhs: NdArrayTensor<bool>, rhs: NdArrayTensor<bool>) -> NdArrayTensor<bool> {
         let output = Zip::from(&lhs.array)
             .and(&rhs.array)

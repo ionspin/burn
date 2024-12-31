@@ -153,6 +153,18 @@ pub trait BoolTensorOps<B: Backend> {
         cat_with_slice_assign::<B, Bool>(tensors, dim)
     }
 
+    /// Returns the elementwise and operation.
+    ///
+    /// # Arguments
+    ///
+    /// * `lhs` - The left hand side tensor.
+    /// * `rhs` - The right hand side tensor.
+    ///
+    /// # Returns
+    ///
+    /// The tensor with the result of the and operation.
+    fn bool_and(lhs: BoolTensor<B>, rhs: BoolTensor<B>) -> BoolTensor<B>;
+
     /// Equates the two tensors.
     ///
     /// # Arguments

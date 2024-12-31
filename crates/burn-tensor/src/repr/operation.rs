@@ -531,6 +531,8 @@ pub enum BoolOperationDescription {
     IntoInt(UnaryOperationDescription),
     /// Operation corresponding to [not](crate::ops::BoolTensorOps::bool_not).
     Not(UnaryOperationDescription),
+    /// Operation corresponding to [not](crate::ops::BoolTensorOps::bool_and).
+    And(BinaryOperationDescription)
 }
 
 /// Swap dim operation description.
@@ -1554,6 +1556,7 @@ impl BoolOperationDescription {
             BoolOperationDescription::IntoFloat(desc) => vec![&desc.input, &desc.out],
             BoolOperationDescription::IntoInt(desc) => vec![&desc.input, &desc.out],
             BoolOperationDescription::Not(desc) => vec![&desc.input, &desc.out],
+            BoolOperationDescription::And(desc) => vec![&desc.lhs, &desc.rhs, &desc.out]
         }
     }
 }

@@ -270,6 +270,13 @@ pub(crate) fn launch_scalar_cmp<
     }
 }
 
+pub fn and<R: JitRuntime, E: JitElement, BT: BoolElement>(
+    lhs: JitTensor<R>,
+    rhs: JitTensor<R>,
+) -> JitTensor<R> {
+    launch_cmp::<R, E, BT, AndOp>(lhs, rhs)
+}
+
 pub fn equal<R: JitRuntime, E: JitElement, BT: BoolElement>(
     lhs: JitTensor<R>,
     rhs: JitTensor<R>,

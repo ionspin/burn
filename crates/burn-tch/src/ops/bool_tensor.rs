@@ -56,6 +56,10 @@ impl<E: TchElement, Q: QuantElement> BoolTensorOps<Self> for LibTorch<E, Q> {
         TchOps::cat(tensors, dim)
     }
 
+    fn bool_and(lhs: TchTensor, rhs: TchTensor) -> TchTensor {
+        TchOps::and(lhs, rhs)
+    }
+
     fn bool_equal(lhs: TchTensor, rhs: TchTensor) -> TchTensor {
         TchOps::equal(lhs, rhs)
     }
