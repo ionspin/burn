@@ -50,6 +50,13 @@ where
         Some(tensor.clone())
     }
 
+    pub fn debug_all<B>(&self) where B: Backend {
+        self.tensors.iter().for_each(|(key, value)| {
+            let tensor = value.downcast_ref::<TensorPrimitive<B>>().unwrap();
+            println!("+++ Tensor {:?}", tensor)
+        });
+    }
+
     /// Register a new tensor for the given ID.
     ///
     /// # Notes

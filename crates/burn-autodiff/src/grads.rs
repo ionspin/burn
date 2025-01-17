@@ -10,8 +10,9 @@ use crate::{
 pub type GradID = u64;
 
 /// Gradients container used during the backward pass.
+#[derive(Debug)]
 pub struct Gradients {
-    container: TensorContainer<GradID>,
+    pub container: TensorContainer<GradID>,
 }
 
 impl Gradients {

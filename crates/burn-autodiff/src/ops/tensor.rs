@@ -2134,6 +2134,10 @@ impl<B: Backend, C: CheckpointStrategy> FloatTensorOps<Self> for Autodiff<B, C> 
             fn depth(&self) -> usize {
                 self.output.order
             }
+
+            fn debug(&self) {
+                println!("Cat step");
+            }
         }
 
         let mut nodes = Vec::with_capacity(tensors.len());

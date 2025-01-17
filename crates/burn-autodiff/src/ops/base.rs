@@ -249,6 +249,8 @@ where
     SB: Clone + Send + std::fmt::Debug + 'static,
 {
     fn step(self: Box<Self>, grads: &mut Gradients, checkpointer: &mut Checkpointer) {
+        println!("Before step {:?}", grads);
+        grads.container.debug_all::<B>();
         self.backward.backward(self.ops, grads, checkpointer);
     }
 
@@ -262,6 +264,10 @@ where
 
     fn depth(&self) -> usize {
         self.ops.node.order
+    }
+
+    fn debug(&self) {
+        println!("Ops step backward {:?}", self.backward)
     }
 }
 
@@ -284,6 +290,10 @@ impl<const N: usize> Step for UntrackedOpsStep<N> {
     }
     fn depth(&self) -> usize {
         self.ops.node.order
+    }
+
+    fn debug(&self) {
+        println!("Untrackedops step")
     }
 }
 

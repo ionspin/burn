@@ -48,6 +48,10 @@ impl Step for RootStep {
     fn depth(&self) -> usize {
         self.node.order
     }
+
+    fn debug(&self) {
+        println!("Root step");
+    }
 }
 
 impl<B: Backend> AutodiffTensor<B> {

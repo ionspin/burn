@@ -17,6 +17,8 @@ pub struct AutodiffServer {
 
 impl AutodiffServer {
     pub fn register(&mut self, rc: NodeRefCount, step: StepBoxed, actions: CheckpointerBuilder) {
+        println!("Registering");
+        step.debug();
         let parents = step.parents();
         let node_id = *rc.as_ref();
 
@@ -34,6 +36,12 @@ impl AutodiffServer {
         let builder = self.actions_builder.remove(&node_id).unwrap();
 
         let (tape, builder) = self.build_tape(node_id, step, builder);
+        tape.iter().enumerate().for_each(|(vector_index, vector)| {
+            vector.iter().enumerate().for_each(|(index, step)|{
+                println!("Vector {} Step {}", vector_index, index);
+                step.debug();
+            });
+        });
         let checkpointer = builder.build(&self.steps);
 
         let gradients = Self::execute_steps(tape, grads, checkpointer);

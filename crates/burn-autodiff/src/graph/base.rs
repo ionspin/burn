@@ -12,6 +12,8 @@ pub trait Step: Send + std::fmt::Debug {
     fn node(&self) -> NodeID;
     /// The parents of the node associated to the step.
     fn parents(&self) -> Vec<NodeID>;
+
+    fn debug(&self);
 }
 
 pub type StepBoxed = Box<dyn Step>;
