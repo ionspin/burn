@@ -1,12 +1,8 @@
 use std::sync::Arc;
 
-use crate::{
-    checkpoint::{base::Checkpointer, builder::CheckpointerBuilder},
-    grads::Gradients,
-    graph::{ComputingProperty, Node, NodeID, NodeRef, Requirement, Step},
-    runtime::{AutodiffClient, AutodiffClientImpl},
-};
+use crate::{checkpoint::{base::Checkpointer, builder::CheckpointerBuilder}, grads::Gradients, graph::{ComputingProperty, Node, NodeID, NodeRef, Requirement, Step}, runtime::{AutodiffClient, AutodiffClientImpl}, DEBUG_AD_PRINT};
 use burn_tensor::{backend::Backend, TensorMetadata};
+use crate::graph::DEBUG_STEP;
 
 #[derive(Debug, Clone)]
 pub struct AutodiffTensor<B: Backend> {
@@ -50,7 +46,9 @@ impl Step for RootStep {
     }
 
     fn debug(&self) {
-        println!("Root step");
+        if DEBUG_AD_PRINT {
+            println!("Root step");
+        }
     }
 }
 

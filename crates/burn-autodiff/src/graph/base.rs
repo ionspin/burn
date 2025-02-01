@@ -1,7 +1,6 @@
 use super::NodeID;
 use crate::{checkpoint::base::Checkpointer, grads::Gradients};
 use std::collections::HashMap;
-
 /// Backward step for reverse mode autodiff.
 pub trait Step: Send + std::fmt::Debug {
     /// Executes the step and consumes it.

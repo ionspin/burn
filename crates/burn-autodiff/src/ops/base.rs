@@ -1,17 +1,13 @@
 use super::Backward;
-use crate::{
-    checkpoint::{
-        base::Checkpointer,
-        builder::{ActionType, CheckpointerBuilder},
-        retro_forward::RetroForward,
-        strategy::CheckpointStrategy,
-    },
-    grads::Gradients,
-    graph::{ComputingProperty, NodeID, NodeRef, Requirement, Step},
-    tensor::AutodiffTensor,
-};
+use crate::{checkpoint::{
+    base::Checkpointer,
+    builder::{ActionType, CheckpointerBuilder},
+    retro_forward::RetroForward,
+    strategy::CheckpointStrategy,
+}, grads::Gradients, graph::{ComputingProperty, NodeID, NodeRef, Requirement, Step}, tensor::AutodiffTensor, DEBUG_AD_PRINT};
 use burn_tensor::{backend::Backend, ops::FloatTensor, Shape, TensorMetadata};
 use std::marker::PhantomData;
+use crate::graph::DEBUG_STEP;
 
 /// Operation in preparation.
 ///
@@ -249,8 +245,10 @@ where
     SB: Clone + Send + std::fmt::Debug + 'static,
 {
     fn step(self: Box<Self>, grads: &mut Gradients, checkpointer: &mut Checkpointer) {
-        println!("Before step {:?}", grads);
-        grads.container.debug_all::<B>();
+        if DEBUG_AD_PRINT {
+            println!("Before step {:?}", grads);
+            grads.container.debug_all::<B>();
+        }
         self.backward.backward(self.ops, grads, checkpointer);
     }
 
@@ -267,7 +265,9 @@ where
     }
 
     fn debug(&self) {
-        println!("Ops step backward {:?}", self.backward)
+        if DEBUG_AD_PRINT {
+            println!("Ops step backward {:?}", self.backward)
+        }
     }
 }
 
@@ -293,7 +293,9 @@ impl<const N: usize> Step for UntrackedOpsStep<N> {
     }
 
     fn debug(&self) {
-        println!("Untrackedops step")
+        if DEBUG_AD_PRINT {
+            println!("Untrackedops step")
+        }
     }
 }
 

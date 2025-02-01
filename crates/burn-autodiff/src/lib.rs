@@ -32,5 +32,7 @@ pub(crate) mod runtime;
 
 pub use backend::*;
 
+pub const DEBUG_AD_PRINT: bool = true;
+
 #[cfg(feature = "export_tests")]
 mod tests;

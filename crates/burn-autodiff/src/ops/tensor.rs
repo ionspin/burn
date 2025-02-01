@@ -1,26 +1,17 @@
 use alloc::{vec, vec::Vec};
 use std::marker::PhantomData;
 
-use crate::{
-    checkpoint::{
-        base::Checkpointer, builder::CheckpointerBuilder, retro_forward::RetroForward,
-        state::BackwardStates, strategy::CheckpointStrategy,
-    },
-    grads::Gradients,
-    graph::{ComputingProperty, NodeID, NodeRef, Requirement, Step},
-    ops::{binary, broadcast_shape, unary, Backward, Ops, OpsKind},
-    retro_binary, retro_unary, retro_unary_scalar,
-    tensor::AutodiffTensor,
-    utils::duplicate,
-    Autodiff,
-};
+use crate::{checkpoint::{
+    base::Checkpointer, builder::CheckpointerBuilder, retro_forward::RetroForward,
+    state::BackwardStates, strategy::CheckpointStrategy,
+}, grads::Gradients, graph::{ComputingProperty, NodeID, NodeRef, Requirement, Step}, ops::{binary, broadcast_shape, unary, Backward, Ops, OpsKind}, retro_binary, retro_unary, retro_unary_scalar, tensor::AutodiffTensor, utils::duplicate, Autodiff, DEBUG_AD_PRINT};
 
 use burn_tensor::{
     backend::Backend,
     ops::{BoolTensor, FloatElem, FloatTensor, FloatTensorOps, IntTensor},
     Device, ElementConversion, Shape, TensorData, TensorMetadata,
 };
-
+use crate::graph::DEBUG_STEP;
 use super::maxmin::MaxMinDim;
 
 // Unsqueeze op on primitive.
@@ -2136,7 +2127,9 @@ impl<B: Backend, C: CheckpointStrategy> FloatTensorOps<Self> for Autodiff<B, C> 
             }
 
             fn debug(&self) {
-                println!("Cat step");
+                if DEBUG_AD_PRINT {
+                    println!("Cat step");
+                }
             }
         }
 
