@@ -33,6 +33,7 @@ impl RetroForwards {
             // Retro forwards are always used only once because afterwards their state is computed
             let retro_forward = self.map.remove(&node_id).unwrap();
             retro_forward.forward(backward_states, node_id);
+            println!("------------ Retroforward ----------------- ")
         }
     }
 

@@ -7,7 +7,6 @@ use crate::{checkpoint::{
 }, grads::Gradients, graph::{ComputingProperty, NodeID, NodeRef, Requirement, Step}, tensor::AutodiffTensor, DEBUG_AD_PRINT};
 use burn_tensor::{backend::Backend, ops::FloatTensor, Shape, TensorMetadata};
 use std::marker::PhantomData;
-use crate::graph::DEBUG_STEP;
 
 /// Operation in preparation.
 ///
@@ -246,7 +245,7 @@ where
 {
     fn step(self: Box<Self>, grads: &mut Gradients, checkpointer: &mut Checkpointer) {
         if DEBUG_AD_PRINT {
-            println!("Before step {:?}", grads);
+            println!("Before step op {:?}, grads {:?}", self.ops, grads);
             grads.container.debug_all::<B>();
         }
         self.backward.backward(self.ops, grads, checkpointer);
@@ -264,9 +263,13 @@ where
         self.ops.node.order
     }
 
-    fn debug(&self) {
+    fn debug(&self, register: bool) {
         if DEBUG_AD_PRINT {
-            println!("Ops step backward {:?}", self.backward)
+            if register {
+                println!("Register: Ops step {:?}", self.backward)
+            } else {
+                println!("Backward: Ops step {:?}", self.backward)
+            }
         }
     }
 }
@@ -292,9 +295,13 @@ impl<const N: usize> Step for UntrackedOpsStep<N> {
         self.ops.node.order
     }
 
-    fn debug(&self) {
+    fn debug(&self, register: bool) {
         if DEBUG_AD_PRINT {
-            println!("Untrackedops step")
+            if register {
+                println!("Register: Untrackedops step")
+            } else {
+                println!("Backward: Untrackedops step")
+            }
         }
     }
 }

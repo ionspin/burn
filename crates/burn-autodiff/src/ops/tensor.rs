@@ -11,7 +11,6 @@ use burn_tensor::{
     ops::{BoolTensor, FloatElem, FloatTensor, FloatTensorOps, IntTensor},
     Device, ElementConversion, Shape, TensorData, TensorMetadata,
 };
-use crate::graph::DEBUG_STEP;
 use super::maxmin::MaxMinDim;
 
 // Unsqueeze op on primitive.
@@ -1148,7 +1147,7 @@ impl<B: Backend, C: CheckpointStrategy> FloatTensorOps<Self> for Autodiff<B, C> 
                 _checkpointer: &mut Checkpointer,
             ) {
                 let (ranges, shape, device) = ops.state;
-
+                println!("Index backward {:?} {:?}", ranges, shape);
                 unary::<B, _>(ops.parents, ops.node, grads, |grad| {
                     let zeros = B::float_zeros(shape, &device);
                     B::float_slice_assign(zeros, &ranges, grad)
@@ -2126,9 +2125,13 @@ impl<B: Backend, C: CheckpointStrategy> FloatTensorOps<Self> for Autodiff<B, C> 
                 self.output.order
             }
 
-            fn debug(&self) {
+            fn debug(&self, call_type: bool) {
                 if DEBUG_AD_PRINT {
-                    println!("Cat step");
+                    if call_type {
+                        println!("Register: Cat step");
+                    } else {
+                        println!("Backwards: Cat step");
+                    }
                 }
             }
         }

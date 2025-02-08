@@ -12,7 +12,7 @@ pub trait Step: Send + std::fmt::Debug {
     /// The parents of the node associated to the step.
     fn parents(&self) -> Vec<NodeID>;
 
-    fn debug(&self);
+    fn debug(&self, register: bool);
 }
 
 pub type StepBoxed = Box<dyn Step>;
