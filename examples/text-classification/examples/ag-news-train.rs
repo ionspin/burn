@@ -93,6 +93,16 @@ mod wgpu {
     }
 }
 
+#[cfg(feature = "vulkan")]
+mod vulkan {
+    use crate::{launch, ElemType};
+    use burn::backend::{Autodiff, Vulkan};
+
+    pub fn run() {
+        launch::<Autodiff<Vulkan<ElemType, i32>>>(vec![Default::default()]);
+    }
+}
+
 #[cfg(feature = "remote")]
 mod remote {
     use crate::{launch, ElemType};
@@ -116,10 +126,10 @@ mod cuda {
 #[cfg(feature = "hip")]
 mod hip {
     use crate::{launch, ElemType};
-    use burn::backend::{Autodiff, HipJit};
+    use burn::backend::{Autodiff, Hip};
 
     pub fn run() {
-        launch::<Autodiff<HipJit<ElemType, i32>>>(vec![Default::default()]);
+        launch::<Autodiff<Hip<ElemType, i32>>>(vec![Default::default()]);
     }
 }
 
@@ -143,4 +153,6 @@ fn main() {
     hip::run();
     #[cfg(feature = "remote")]
     remote::run();
+    #[cfg(feature = "vulkan")]
+    vulkan::run();
 }
