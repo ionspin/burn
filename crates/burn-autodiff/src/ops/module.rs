@@ -27,7 +27,7 @@ impl<B: Backend, C: CheckpointStrategy> ModuleOps<Autodiff<B, C>> for Autodiff<B
             ) {
                 let (weights, indices) = ops.state;
 
-                unary::<B, _>(ops.parents, ops.node, grads, |grad| {
+                unary::<B, _>("embedding", ops.parents, ops.node, grads, |grad| {
                     B::embedding_backward(weights, grad, indices)
                 });
             }

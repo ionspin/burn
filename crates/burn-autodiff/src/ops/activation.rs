@@ -33,7 +33,7 @@ impl<B: Backend, C: CheckpointStrategy> ActivationOps<Autodiff<B, C>> for Autodi
             ) {
                 let input = checkpointer.retrieve_node_output(ops.state);
 
-                unary::<B, _>(ops.parents, ops.node, grads, |grad| {
+                unary::<B, _>(&"gelu", ops.parents, ops.node, grads, |grad| {
                     B::gelu_backward(input, grad)
                 });
             }
@@ -70,7 +70,7 @@ impl<B: Backend, C: CheckpointStrategy> ActivationOps<Autodiff<B, C>> for Autodi
                 checkpointer: &mut Checkpointer,
             ) {
                 let state = checkpointer.retrieve_node_output(ops.state);
-                unary::<B, _>(ops.parents, ops.node, grads, |grad| {
+                unary::<B, _>(&"relu", ops.parents, ops.node, grads, |grad| {
                     B::relu_backward(state, grad)
                 });
             }
@@ -108,7 +108,7 @@ impl<B: Backend, C: CheckpointStrategy> ActivationOps<Autodiff<B, C>> for Autodi
             ) {
                 let input = checkpointer.retrieve_node_output(ops.state);
                 let output = B::sigmoid(input);
-                unary::<B, _>(ops.parents, ops.node, grads, |grad| {
+                unary::<B, _>(&"sigmoid", ops.parents, ops.node, grads, |grad| {
                     B::sigmoid_backward(output, grad)
                 });
             }
@@ -146,7 +146,7 @@ impl<B: Backend, C: CheckpointStrategy> ActivationOps<Autodiff<B, C>> for Autodi
             ) {
                 let input = checkpointer.retrieve_node_output(ops.state);
 
-                unary::<B, _>(ops.parents, ops.node, grads, |grad| {
+                unary::<B, _>(&"log_sigmoid", ops.parents, ops.node, grads, |grad| {
                     B::log_sigmoid_backward(input, grad)
                 });
             }

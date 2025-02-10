@@ -14,7 +14,7 @@ impl<B: Backend> Backward<B, 1> for MaxMinDim {
         grads: &mut Gradients,
         _checkpointer: &mut Checkpointer,
     ) {
-        unary::<B, _>(ops.parents, ops.node, grads, |grad| {
+        unary::<B, _>(&"MaxMinDim", ops.parents, ops.node, grads, |grad| {
             let (indices, shape) = ops.state;
             let ndims = shape.num_dims();
             let device = B::float_device(&grad);

@@ -48,6 +48,7 @@ where
 
 /// Execute a binary operation during the backward step.
 pub fn binary<B, FLhs, FRhs>(
+    name: &str,
     parents: [Option<NodeRef>; 2],
     node: NodeRef,
     grads: &mut Gradients,
@@ -58,31 +59,39 @@ pub fn binary<B, FLhs, FRhs>(
     FLhs: FnOnce(B::FloatTensorPrimitive) -> B::FloatTensorPrimitive,
     FRhs: FnOnce(B::FloatTensorPrimitive) -> B::FloatTensorPrimitive,
 {
+    println!("{}", name);
     let [grad_4lhs, grad_4rhs] = duplicate(&parents, Some(grads.consume::<B>(&node)));
     let [node_lhs, node_rhs] = parents;
 
     if let Some(node) = node_lhs {
+        println!("Before LHS: {:?}", grad_4lhs);
         let grad = func_lhs(grad_4lhs.unwrap());
+        println!("After LHS: {:?}", grad);
         grads.register::<B>(node.id, grad)
     }
 
     if let Some(node) = node_rhs {
+        println!("Before RHS: {:?}", grad_4rhs);
         let grad = func_rhs(grad_4rhs.unwrap());
+        println!("After RHS: {:?}", grad);
         grads.register::<B>(node.id, grad)
     }
 }
 
 /// Execute a unary operation during the backward step.
-pub fn unary<B, F>(parents: [Option<NodeRef>; 1], node: NodeRef, grads: &mut Gradients, func: F)
+pub fn unary<B, F>(name: &str, parents: [Option<NodeRef>; 1], node: NodeRef, grads: &mut Gradients, func: F)
 where
     B: Backend,
     F: FnOnce(B::FloatTensorPrimitive) -> B::FloatTensorPrimitive,
 {
+    println!("{}", name);
     let [parent_node] = parents;
     let grad = grads.consume::<B>(&node);
 
     if let Some(node) = parent_node {
+        println!("Before unary: {:?}", grad);
         let grad = func(grad);
+        println!("After unary: {:?}", grad);
         grads.register::<B>(node.id, grad)
     }
 }
