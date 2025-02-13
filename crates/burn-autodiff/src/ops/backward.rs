@@ -35,6 +35,7 @@ where
         self,
         nodes: [NodeRef; N],
     ) -> OpsPrep<Self, B, Self::State, C, N> {
+        println!("Preparing {:?}", self);
         let requirement = Requirement::from_nodes(&nodes);
         OpsPrep::new(
             nodes,

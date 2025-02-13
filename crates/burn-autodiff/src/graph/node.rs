@@ -58,6 +58,7 @@ impl NodeID {
     pub fn new() -> Self {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let value = COUNTER.fetch_add(1, Ordering::Relaxed);
+        println!("Creating node {}", value);
         if value == u64::MAX {
             panic!("NodeID overflowed");
         }

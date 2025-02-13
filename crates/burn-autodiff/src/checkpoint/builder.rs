@@ -107,6 +107,7 @@ impl CheckpointerBuilder {
     }
 
     pub(crate) fn build(self, graph: &NodeSteps) -> Checkpointer {
+        println!("Building chekpointer");
         let node_tree = self.make_tree(graph);
         let mut backward_states_map = HashMap::new();
         let mut retro_forwards_map = HashMap::new();

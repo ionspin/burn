@@ -177,7 +177,9 @@ where
 
         // We register the ops in the graph even if untracked, otherwise memory bound operations
         // that have an untracked parent would not be able to retrieve it
-        output.register_step(UntrackedOpsStep::new(ops), self.checkpointer_builder)
+        let output = output.register_step(UntrackedOpsStep::new(ops), self.checkpointer_builder);
+        println!("Untracked output {:?}", output);
+        output
     }
 }
 
@@ -197,12 +199,14 @@ where
         );
         let parents = self.nodes.map(|node| node.clone_if_require_grad());
         let ops = Ops::new(parents, output.node.clone(), state);
-
-        output.register_step(OpsStep::new(ops, self.backward), self.checkpointer_builder)
+        let output = output.register_step(OpsStep::new(ops, self.backward), self.checkpointer_builder);
+        println!("Tracked output {:?}", output);
+        output
     }
 
     /// Checkpoints the tensor
     pub fn checkpoint(&mut self, tensor: &AutodiffTensor<B>) -> NodeID {
+        println!("Checkpointing {:?}", tensor);
         self.checkpointer_builder
             .checkpoint(tensor, ActionType::Explicit);
 

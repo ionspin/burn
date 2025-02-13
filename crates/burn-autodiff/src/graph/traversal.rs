@@ -28,7 +28,9 @@ impl BreadthFirstSearch {
         visited.insert(root_id);
         parents.append(&mut root_step.parents());
 
+        println!("Root id {} parents {:?}", root_id.value, root_step.parents());
         callback(root_id, root_step);
+
 
         while let Some(id) = parents.pop() {
             let step = match steps.remove(&id) {
@@ -50,7 +52,7 @@ impl BreadthFirstSearch {
                     parents.push(*id);
                 }
             }
-
+            println!("Step id {} parents {:?}", step_node.value, step.parents());
             callback(step_node, step);
         }
     }

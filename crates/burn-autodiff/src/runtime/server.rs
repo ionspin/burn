@@ -35,6 +35,7 @@ impl AutodiffServer {
 
         let (tape, builder) = self.build_tape(node_id, step, builder);
         let checkpointer = builder.build(&self.steps);
+        println!("tape and checkpointer ready");
 
         let gradients = Self::execute_steps(tape, grads, checkpointer);
 
@@ -54,10 +55,11 @@ impl AutodiffServer {
         node_step: StepBoxed,
         mut builder: CheckpointerBuilder,
     ) -> (Vec<Vec<StepBoxed>>, CheckpointerBuilder) {
+        println!("Building tape");
         let mut tape = (0..node_step.depth())
             .map(|_| Vec::with_capacity(1))
             .collect::<Vec<_>>();
-
+        println!("Tape built");
         BreadthFirstSearch.traverse(node, node_step, &mut self.steps, |id, step| {
             self.memory_management.consume_node(id);
 
@@ -83,6 +85,7 @@ impl AutodiffServer {
         mut grads: Gradients,
         mut checkpointer: Checkpointer,
     ) -> Gradients {
+        println!("Executing steps");
         tape.into_iter().rev().for_each(|steps| {
             steps
                 .into_iter()

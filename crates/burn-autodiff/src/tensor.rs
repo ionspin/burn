@@ -153,6 +153,7 @@ impl<B: Backend> AutodiffTensor<B> {
         step_that_created_the_tensor: S,
         actions: CheckpointerBuilder,
     ) -> Self {
+        println!("Registering {}", self.rc.value);
         self.node.client.register(
             self.rc.clone(),
             Box::new(step_that_created_the_tensor),
