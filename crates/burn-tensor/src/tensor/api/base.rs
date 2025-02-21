@@ -70,13 +70,24 @@ use super::{TensorMetadata, Transaction};
 ///     println!("{indexed}");
 /// }
 /// ```
-#[derive(new, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Tensor<B, const D: usize, K = Float>
 where
     B: Backend,
     K: TensorKind<B>,
 {
     pub(crate) primitive: K::Primitive,
+}
+
+impl <B, const D: usize, K> Tensor<B, D, K> where
+    B: Backend,
+    K: TensorKind<B> {
+    pub fn new(primitive: K::Primitive) -> Self {
+        println!("New tensor made from {:?}", primitive);
+        Tensor {
+            primitive
+        }
+    }
 }
 
 impl<B, const D: usize, K, T> From<T> for Tensor<B, D, K>
@@ -953,6 +964,7 @@ where
         T: Into<TensorData>,
     {
         let data = data.into();
+        println!("From data {:?}", data);
         check!(TensorCheck::creation_ops::<D>(
             "From Data",
             data.shape.as_slice()

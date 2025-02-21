@@ -52,6 +52,7 @@ fn unsqueeze_like<B: Backend>(
 
 impl<B: Backend, C: CheckpointStrategy> FloatTensorOps<Self> for Autodiff<B, C> {
     fn float_from_data(data: TensorData, device: &Device<Self>) -> FloatTensor<Self> {
+        println!("float_from_data");
         AutodiffTensor::new(B::float_from_data(data, device))
     }
 
@@ -60,22 +61,27 @@ impl<B: Backend, C: CheckpointStrategy> FloatTensorOps<Self> for Autodiff<B, C> 
         distribution: burn_tensor::Distribution,
         device: &Device<Self>,
     ) -> FloatTensor<Self> {
+        println!("float_random");
         AutodiffTensor::new(B::float_random(shape, distribution, device))
     }
 
     fn float_zeros(shape: Shape, device: &Device<Self>) -> FloatTensor<Self> {
+        println!("float_zeroes");
         AutodiffTensor::new(B::float_zeros(shape, device))
     }
 
     fn float_ones(shape: Shape, device: &Device<Self>) -> FloatTensor<Self> {
+        println!("float_ones");
         AutodiffTensor::new(B::float_ones(shape, device))
     }
 
     async fn float_into_data(tensor: FloatTensor<Self>) -> TensorData {
+        println!("float_into_data");
         B::float_into_data(tensor.primitive).await
     }
 
     fn float_device(tensor: &FloatTensor<Self>) -> Device<Self> {
+        println!("float_device");
         B::float_device(&tensor.primitive)
     }
 
@@ -112,6 +118,7 @@ impl<B: Backend, C: CheckpointStrategy> FloatTensorOps<Self> for Autodiff<B, C> 
     }
 
     fn float_empty(shape: Shape, device: &Device<Self>) -> FloatTensor<Self> {
+        println!("float_empty");
         AutodiffTensor::new(B::float_empty(shape, device))
     }
 
