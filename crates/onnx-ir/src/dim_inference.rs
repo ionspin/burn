@@ -32,6 +32,7 @@ pub fn dim_inference(node: &mut Node) {
         NodeType::Erf => same_as_input(node),
         NodeType::Exp => same_as_input(node),
         NodeType::Expand => expand_update_outputs(node),
+        NodeType::Floor => same_as_input(node),
         NodeType::Flatten => flatten_update_outputs(node),
         NodeType::Gelu => same_as_input(node),
         NodeType::Gather => gather_update_outputs(node),
@@ -57,6 +58,7 @@ pub fn dim_inference(node: &mut Node) {
         NodeType::Mul => same_as_input(node),
         NodeType::Neg => same_as_input(node),
         NodeType::Not => same_as_input(node),
+        NodeType::OneHot => one_hot_output_shape(node),
         NodeType::Pad => same_as_input(node),
         NodeType::PRelu => same_as_input_broadcast(node),
         NodeType::Pow => same_as_input_broadcast(node),
@@ -80,11 +82,13 @@ pub fn dim_inference(node: &mut Node) {
         NodeType::Sin => same_as_input(node),
         NodeType::Slice => same_as_input(node),
         NodeType::Softmax => same_as_input(node),
+        NodeType::Split => split_update_outputs(node),
         NodeType::Squeeze => squeeze_update_output(node),
         NodeType::Sqrt => same_as_input(node),
         NodeType::Sub => same_as_input_broadcast(node),
         NodeType::Sum => same_as_input_broadcast(node),
         NodeType::Tanh => same_as_input(node),
+        NodeType::TopK => top_k_update_output(node),
         NodeType::Transpose => same_as_input(node),
         NodeType::Trilu => same_as_input(node),
         NodeType::Unsqueeze => unsqueeze_update_output(node),
@@ -342,16 +346,11 @@ fn reshape_update_outputs(node: &mut Node) {
         node.attrs.get("shape").cloned().map(|v| v.into_i64s())
     };
 
-    let output = match &node.outputs[0].ty {
-        ArgType::Tensor(tensor) => tensor.clone(),
-        _ => panic!("Reshape: invalid output types"),
-    };
-
     if let Some(shape) = shape {
         node.outputs[0].ty = ArgType::Tensor(TensorType {
+            elem_type: node.inputs[0].ty.elem_type().clone(),
             dim: shape.len(),
             shape: None, // shape is calculated at runtime
-            ..output
         });
     }
 }
@@ -492,7 +491,7 @@ fn unsqueeze_update_output(node: &mut Node) {
     };
 
     let output_elem = match &node.outputs[0].ty {
-        ArgType::Tensor(tensor) => tensor.elem_type.clone(),
+        ArgType::Tensor(_) => node.inputs[0].ty.elem_type().clone(),
         ArgType::Scalar(elem_type) => elem_type.clone(),
         _ => panic!("Unsqueeze: invalid output type"),
     };
@@ -508,6 +507,35 @@ fn unsqueeze_update_output(node: &mut Node) {
 
 fn same_as_input(node: &mut Node) {
     node.outputs[0].ty = node.inputs[0].ty.clone();
+}
+
+fn top_k_update_output(node: &mut Node) {
+    let dim = match &node.inputs[0].ty {
+        ArgType::Tensor(tensor) => tensor.dim,
+        _ => panic!("TopK: invalid input type"),
+    };
+
+    let output_values_elem = match &node.outputs[0].ty {
+        ArgType::Tensor(tensor) => tensor.elem_type.clone(),
+        _ => panic!("TopK: invalid output type"),
+    };
+
+    let output_indices_elem = match &node.outputs[1].ty {
+        ArgType::Tensor(_) => ElementType::Int64,
+        _ => panic!("TopK: invalid output type"),
+    };
+
+    node.outputs[0].ty = ArgType::Tensor(TensorType {
+        dim,
+        shape: None, // shape is tracked and calculated at runtime
+        elem_type: output_values_elem,
+    });
+
+    node.outputs[1].ty = ArgType::Tensor(TensorType {
+        dim,
+        shape: None, // shape is tracked and calculated at runtime
+        elem_type: output_indices_elem,
+    });
 }
 
 /// Temporary pass-through stub for dimension inference so that we can export the IR model.
@@ -874,6 +902,89 @@ fn gather_update_outputs(node: &mut Node) {
     }
 }
 
+fn split_update_outputs(node: &mut Node) {
+    let input_arg = &node.inputs[0];
+    let input_tensor = match &input_arg.ty {
+        ArgType::Tensor(tensor) => tensor.clone(),
+        _ => panic!("Split: Input must be a tensor"),
+    };
+
+    let input_dims = match &input_tensor.shape {
+        Some(shape) => shape.to_vec(),
+        None => panic!("Split: Input tensor shape is not defined"),
+    };
+
+    let axis = match node.attrs.get("axis") {
+        Some(value) => match &value {
+            AttributeValue::Int64(_) => value.clone().into_i64(),
+            _ => panic!("Only int allowed for axis attribute"),
+        },
+        None => 0,
+    };
+    let rank = input_dims.len() as i64;
+
+    let axis = if axis < 0 { axis + rank } else { axis };
+
+    if axis < 0 || axis >= rank {
+        panic!(
+            "Split: Axis {} is out of bounds for tensor of rank {}",
+            axis, rank
+        );
+    }
+
+    let axis = axis as usize;
+
+    let split_sizes = if let Some(split_arg) = node.inputs.get(2) {
+        // `split` input is provided
+        if let Some(Data::Int64s(sizes)) = &split_arg.value {
+            let sizes: Vec<usize> = sizes.iter().map(|&s| s as usize).collect();
+            let total_size: usize = sizes.iter().sum();
+            if total_size != input_dims[axis] {
+                // can't index into input_dims because it's &usize
+                panic!(
+                    "Split: Sum of split sizes ({}) does not match tensor size along axis {} ({})",
+                    total_size, axis, input_dims[axis]
+                );
+            }
+            sizes
+        } else {
+            panic!("Split: 'split' input must be a tensor of int64 values");
+        }
+    } else {
+        // `split` input is not provided; use `num_outputs` attribute instead
+        let tensor_size = input_dims[axis];
+        let num_outputs = node.outputs.len();
+
+        if num_outputs == 0 {
+            panic!("Split: Number of outputs must be greater than zero");
+        }
+
+        let split_size = tensor_size / num_outputs;
+        let remainder = tensor_size % num_outputs;
+
+        let mut sizes = vec![split_size; num_outputs];
+
+        // According to ONNX spec, the last chunk will be smaller if not evenly divisible
+        for size in sizes.iter_mut().take(remainder) {
+            *size += 1;
+        }
+
+        sizes
+    };
+
+    // Update dimensions for each output
+    for (i, output_arg) in node.outputs.iter_mut().enumerate() {
+        let mut output_dims = input_dims.clone();
+        output_dims[axis] = split_sizes[i];
+
+        output_arg.ty = ArgType::Tensor(TensorType {
+            elem_type: input_tensor.elem_type.clone(),
+            dim: output_dims.len(),
+            shape: None,
+        });
+    }
+}
+
 /// If all input shapes are known,
 /// calculates the rank and shape of the output tensor for Operators supporting
 /// [broadcasting](https://github.com/onnx/onnx/blob/main/docs/Broadcasting.md)
@@ -937,4 +1048,23 @@ fn set_broadcasting_output_shape(node: &mut Node) {
             *s = out_shape[0];
         }
     }
+}
+
+fn one_hot_output_shape(node: &mut Node) {
+    let input_dim = match &node.inputs[0].ty {
+        ArgType::Tensor(tensor) => tensor.dim,
+        _ => panic!("OneHot: invalid input type"),
+    };
+    let new_dim = input_dim + 1;
+
+    let output_elem = match &node.outputs[0].ty {
+        ArgType::Tensor(tensor) => tensor.elem_type.clone(),
+        _ => panic!("OneHot: invalid output type"),
+    };
+
+    node.outputs[0].ty = ArgType::Tensor(TensorType {
+        dim: new_dim,
+        shape: None,
+        elem_type: output_elem,
+    });
 }

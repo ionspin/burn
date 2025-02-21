@@ -7,7 +7,6 @@ use alloc::string::String;
 use alloc::vec;
 
 use burn_common::stub::RwLock;
-use core::any::TypeId;
 use core::future::Future;
 use core::iter::repeat;
 use core::{fmt::Debug, ops::Range};
@@ -15,11 +14,11 @@ use serde::{Deserialize, Deserializer};
 
 use serde::{Serialize, Serializer};
 
-use crate::check::TensorCheck;
 use crate::tensor::api::narrow::narrow;
 use crate::{
     backend::Backend, check, ops::Device, Bool, Float, Int, Shape, TensorData, TensorKind,
 };
+use crate::{cast::ToElement, check::TensorCheck};
 use crate::{DType, Element, TensorPrimitive};
 
 use super::{TensorMetadata, Transaction};
@@ -1706,6 +1705,7 @@ where
                 let elem = data.iter::<<K as BasicOps<B>>::Elem>().next().unwrap();
                 match (precision, K::name()) {
                     (Some(p), "Float") => acc.push_str(&format!("{:.1$}", elem, p)),
+                    (_, "Bool") => acc.push_str(&format!("{}", elem.to_bool())),
                     _ => acc.push_str(&format!("{:?}", elem)),
                 }
             } else {
@@ -1910,12 +1910,7 @@ where
         writeln!(f, "  backend:  {:?},", B::name())?;
         writeln!(f, "  kind:  {:?},", K::name())?;
 
-        // Bool tensors might be encoded in a different type, which we abstract for the display
-        let dtype = if TypeId::of::<K::Elem>() == TypeId::of::<bool>() {
-            DType::Bool
-        } else {
-            self.primitive.dtype()
-        };
+        let dtype = self.primitive.dtype();
 
         writeln!(f, "  dtype:  {:?},", dtype.name())?;
         write!(f, "}}")
@@ -2546,7 +2541,10 @@ impl<B: Backend> BasicOps<B> for Float {
             DType::QFloat(_strategy) => {
                 TensorPrimitive::QFloat(B::q_from_data(data.convert_dtype(dtype), device))
             }
-            _ => TensorPrimitive::Float(B::float_from_data(data.convert_dtype(dtype), device)),
+            _ if dtype.is_float() => {
+                TensorPrimitive::Float(B::float_from_data(data.convert_dtype(dtype), device))
+            }
+            _ => panic!("Expected float dtype, got {dtype:?}"),
         }
     }
 
@@ -2723,6 +2721,10 @@ impl<B: Backend> BasicOps<B> for Int {
     }
 
     fn from_data_dtype(data: TensorData, device: &B::Device, dtype: DType) -> Self::Primitive {
+        if !dtype.is_int() {
+            panic!("Expected int dtype, got {dtype:?}")
+        }
+
         B::int_from_data(data.convert_dtype(dtype), device)
     }
 
@@ -2788,7 +2790,7 @@ impl<B: Backend> BasicOps<B> for Int {
 }
 
 impl<B: Backend> BasicOps<B> for Bool {
-    type Elem = bool;
+    type Elem = B::BoolElem;
 
     fn empty(shape: Shape, device: &B::Device) -> Self::Primitive {
         B::bool_empty(shape, device)
@@ -2835,10 +2837,14 @@ impl<B: Backend> BasicOps<B> for Bool {
     }
 
     fn from_data(data: TensorData, device: &B::Device) -> Self::Primitive {
-        B::bool_from_data(data.convert::<bool>(), device)
+        B::bool_from_data(data.convert::<B::BoolElem>(), device)
     }
 
     fn from_data_dtype(data: TensorData, device: &B::Device, dtype: DType) -> Self::Primitive {
+        // Backends only use one bool representation dtype
+        if dtype != B::BoolElem::dtype() {
+            panic!("Expected bool dtype, got {dtype:?}")
+        }
         B::bool_from_data(data.convert_dtype(dtype), device)
     }
 

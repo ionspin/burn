@@ -44,6 +44,7 @@ include_models!(
     expand_tensor,
     expand_shape,
     flatten,
+    floor,
     gather_1d_idx,
     gather_2d_idx,
     gather_scalar,
@@ -79,6 +80,7 @@ include_models!(
     mul,
     neg,
     not,
+    one_hot,
     pad,
     pow,
     pow_int,
@@ -119,12 +121,14 @@ include_models!(
     sum_int,
     tanh,
     tile,
+    top_k_opset_1,
     trilu_upper,
     trilu_lower,
     transpose,
     unsqueeze,
     unsqueeze_opset11,
-    unsqueeze_opset16
+    unsqueeze_opset16,
+    split
 );
 
 #[cfg(test)]
@@ -133,7 +137,7 @@ mod tests {
 
     use super::*;
 
-    use burn::tensor::{Bool, Int, Shape, Tensor, TensorData};
+    use burn::tensor::{cast::ToElement, Bool, Int, Shape, Tensor, TensorData};
 
     use float_cmp::ApproxEq;
 
@@ -2213,5 +2217,73 @@ mod tests {
         assert!(f_output.equal(f_expected).all().into_scalar());
         assert!(i_output.equal(i_expected).all().into_scalar());
         assert!(b_output.equal(b_expected).all().into_scalar());
+    }
+
+    #[test]
+    fn split() {
+        let device = Default::default();
+        let model = split::Model::<Backend>::new(&device);
+        let shape = [5, 2];
+        let input = Tensor::ones(shape, &device);
+
+        let (tensor_1, tensor_2, tensor_3) = model.forward(input);
+
+        assert_eq!(tensor_1.shape(), Shape::from([2, 2]));
+        assert_eq!(tensor_2.shape(), Shape::from([2, 2]));
+        assert_eq!(tensor_3.shape(), Shape::from([1, 2]));
+    }
+
+    #[test]
+    fn top_k_opset_1() {
+        // Initialize the model
+        let device = Default::default();
+        let model = top_k_opset_1::Model::<Backend>::new(&device);
+
+        // Run the model
+        let input = Tensor::<Backend, 2>::from_floats(
+            [[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0]],
+            &device,
+        );
+        let (values_tensor, indices_tensor) = model.forward(input);
+
+        // expected results
+        let expected_values_tensor =
+            TensorData::from([[4.0, 3.0, 2.to_f32()], [4.0, 3.0, 2.to_f32()]]);
+        let expected_indices_tensor = TensorData::from([[3i64, 2, 1], [3, 2, 1]]);
+
+        values_tensor
+            .to_data()
+            .assert_eq(&expected_values_tensor, true);
+        indices_tensor
+            .to_data()
+            .assert_eq(&expected_indices_tensor, true);
+    }
+
+    #[test]
+    fn one_hot() {
+        // Test for OneHot model
+
+        let device = Default::default();
+        let model = one_hot::Model::<Backend>::new(&device);
+        let input: Tensor<Backend, 1, Int> = Tensor::from_ints([1, 0, 2], &device);
+        let expected: Tensor<Backend, 2, burn::prelude::Float> =
+            Tensor::from_data(TensorData::from([[0, 1, 0], [1, 0, 0], [0, 0, 1]]), &device);
+        let output: Tensor<Backend, 2, Int> = model.forward(input);
+        output.to_data().assert_approx_eq(&expected.to_data(), 3);
+    }
+
+    #[test]
+    fn floor_test() {
+        // Test for floor
+
+        let device = Default::default();
+        let model = floor::Model::<Backend>::new(&device);
+
+        let input = Tensor::<Backend, 1>::from_floats([-0.5, 1.5, 2.1], &device);
+        let expected = Tensor::<Backend, 1>::from_floats([-1., 1., 2.], &device);
+
+        let output = model.forward(input);
+
+        output.to_data().assert_approx_eq(&expected.to_data(), 3);
     }
 }
