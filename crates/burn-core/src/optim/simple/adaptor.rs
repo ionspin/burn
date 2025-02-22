@@ -117,6 +117,7 @@ where
     O: SimpleOptimizer<B::InnerBackend>,
 {
     fn map_float<const D: usize>(&mut self, id: ParamId, tensor: Tensor<B, D>) -> Tensor<B, D> {
+        println!("Get grad for {:?} from {:?}", id, self.grads);
         let grad = self.grads.remove(id);
 
         if let Some(grad) = grad {
@@ -129,13 +130,14 @@ where
             } else {
                 grad
             };
-
+            println!("Pre optimization {:?}", tensor);
             let (tensor, state) = self.optimizer.step(
                 self.lr,
                 tensor.inner(),
                 clipped_grad,
                 record.map(|record| O::to_device(record.into_state(), &device)),
             );
+            println!("Post optimization {:?}", tensor);
 
             if let Some(state) = state {
                 self.records
